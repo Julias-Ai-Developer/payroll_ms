@@ -1,4 +1,6 @@
 <?php
+session_start();
+$business_id = $_SESSION['business_id'];
 require_once 'config/database.php';
 
 // Initialize variables
@@ -23,7 +25,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $sql = "SELECT p.*, e.name, e.employee_id as emp_id, e.position 
             FROM payroll p 
             JOIN employees e ON p.employee_id = e.id 
-            WHERE 1=1";
+            WHERE 1=1 AND p.business_id = $business_id";
     
     $params = [];
     $types = "";
@@ -131,7 +133,7 @@ ob_start();
                         <option value="">-- All Employees --</option>
                         <?php
                         $conn = getConnection();
-                        $sql = "SELECT id, name, employee_id FROM employees ORDER BY name";
+                        $sql = "SELECT id, name, employee_id FROM employees WHERE business_id = $business_id ORDER BY name";
                         $result = $conn->query($sql);
                         
                         if ($result->num_rows > 0) {

@@ -15,66 +15,116 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $username = trim($_POST['username']);
     $password = trim($_POST['password']);
     
-    // Validate input
     if (empty($username) || empty($password)) {
         $error = "Please enter both username and password";
     } else {
-        // Prepare a select statement
         $conn = getConnection();
-        $sql = "SELECT id, username, password FROM users WHERE username = ?";
-        
+
+        // Join business_owners with businesses
+        $sql = "SELECT 
+                    o.id, 
+                    o.business_id, 
+                    o.id_number, 
+                    o.full_name, 
+                    o.username, 
+                    o.email, 
+                    o.phone, 
+                    o.address, 
+                    o.business_role, 
+                    o.password,
+                    
+                    b.business_name,
+                    b.address AS business_address,
+                    b.email AS business_email,
+                    b.phone AS business_phone,
+                    b.registration_number,
+                    b.registration_date,
+                    b.business_type,
+                    b.status
+                    
+                FROM business_owners o
+                INNER JOIN businesses b ON o.business_id = b.id
+                WHERE o.username = ?";
+
         if ($stmt = $conn->prepare($sql)) {
-            // Bind variables to the prepared statement as parameters
             $stmt->bind_param("s", $param_username);
-            
-            // Set parameters
             $param_username = $username;
-            
-            // Attempt to execute the prepared statement
+
             if ($stmt->execute()) {
-                // Store result
                 $stmt->store_result();
                 
-                // Check if username exists
                 if ($stmt->num_rows == 1) {                    
-                    // Bind result variables
-                    $stmt->bind_result($id, $username, $hashed_password);
+                    $stmt->bind_result(
+                        $id, 
+                        $business_id, 
+                        $id_number, 
+                        $full_name, 
+                        $db_username, 
+                        $email, 
+                        $phone, 
+                        $address, 
+                        $role, 
+                        $hashed_password,
+                        
+                        $business_name,
+                        $biz_address,
+                        $biz_email,
+                        $biz_phone,
+                        $registration_number,
+                        $registration_date,
+                        $business_type,
+                        $biz_status
+                    );
+
                     if ($stmt->fetch()) {
                         if (password_verify($password, $hashed_password)) {
-                            // Password is correct, start a new session
-                            session_start();
+                            session_regenerate_id(true);
                             
-                            // Store data in session variables
+                            // Owner data
                             $_SESSION["loggedin"] = true;
                             $_SESSION["user_id"] = $id;
-                            $_SESSION["username"] = $username;
+                            $_SESSION["business_id"] = $business_id;
+                            $_SESSION["id_number"] = $id_number;
+                            $_SESSION["full_name"] = $full_name;
+                            $_SESSION["username"] = $db_username;
+                            $_SESSION["email"] = $email;
+                            $_SESSION["phone"] = $phone;
+                            $_SESSION["address"] = $address;
+                            $_SESSION["business_role"] = $role;
+
+                            // Business data
+                            $_SESSION["business_name"] = $business_name;
+                            $_SESSION["business_address"] = $biz_address;
+                            $_SESSION["business_email"] = $biz_email;
+                            $_SESSION["business_phone"] = $biz_phone;
+                            $_SESSION["registration_number"] = $registration_number;
+                            $_SESSION["registration_date"] = $registration_date;
+                            $_SESSION["business_type"] = $business_type;
+                            $_SESSION["business_status"] = $biz_status;
+
                             $_SESSION["show_welcome"] = true;
-                            
-                            // Redirect user to dashboard
+
                             header("location: ../index.php");
                             exit;
                         } else {
-                            // Password is not valid
                             $error = "Invalid username or password";
                         }
                     }
                 } else {
-                    // Username doesn't exist
                     $error = "Invalid username or password";
                 }
             } else {
                 $error = "Oops! Something went wrong. Please try again later.";
             }
-            
-            // Close statement
+
             $stmt->close();
         }
-        
-        // Close connection
         $conn->close();
     }
 }
 ?>
+
+
 
 <!DOCTYPE html>
 <html lang="en">
@@ -144,7 +194,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         </form>
         
         <div class="mt-6 text-center text-sm">
-            <p class="text-gray-600">Default credentials: admin / admin123</p>
+            <p class="text-gray-600">&copy;Payroll Management System. All Rights Reserved || Group E & Kamatrust Ai</p>
         </div>
     </div>
 </body>

@@ -1,4 +1,6 @@
 <?php
+session_start();
+$business_id = $_SESSION['business_id'];
 require_once 'config/database.php';
 
 // Initialize variables
@@ -79,7 +81,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             $error = "Please select all required fields";
         } else {
             // Check if payroll already exists for this employee and month/year
-            $check_sql = "SELECT id FROM payroll WHERE employee_id = ? AND month = ? AND year = ?";
+            $check_sql = "SELECT id FROM payroll WHERE employee_id = ? AND month = ? AND year = ? AND business_id = $business_id";
             $check_stmt = $conn->prepare($check_sql);
             $check_stmt->bind_param("isi", $employee_id, $month, $year);
             $check_stmt->execute();
@@ -89,7 +91,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 $error = "Payroll already processed for this employee in $month $year";
             } else {
                 // Get employee details
-                $emp_sql = "SELECT * FROM employees WHERE id = ?";
+                $emp_sql = "SELECT * FROM employees WHERE id = ? AND business_id = $business_id";
                 $emp_stmt = $conn->prepare($emp_sql);
                 $emp_stmt->bind_param("i", $employee_id);
                 $emp_stmt->execute();
@@ -106,10 +108,10 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     $net_salary = $gross_salary - $deductions;
                     
                     // Save payroll record (default status = active)
-                    $sql = "INSERT INTO payroll (employee_id, month, year, gross_salary, deductions, net_salary, status) 
-                            VALUES (?, ?, ?, ?, ?, ?, 'active')";
+                    $sql = "INSERT INTO payroll (employee_id, month, year, gross_salary, deductions, net_salary,business_id, status) 
+                            VALUES (?, ?, ?, ?, ?, ?, ?, 'active')";
                     $stmt = $conn->prepare($sql);
-                    $stmt->bind_param("isiddd", $employee_id, $month, $year, $gross_salary, $deductions, $net_salary);
+                    $stmt->bind_param("isidddd", $employee_id, $month, $year, $gross_salary, $deductions, $net_salary,$business_id);
                     
                     if ($stmt->execute()) {
                         $success = "Payroll processed successfully for " . $employee['name'] . " - $month $year";
@@ -159,7 +161,7 @@ ob_start();
                         <option value="">-- Select Employee --</option>
                         <?php
                         $conn = getConnection();
-                        $sql = "SELECT id, name, employee_id FROM employees ORDER BY name";
+                        $sql = "SELECT id, name, employee_id FROM employees WHERE  business_id = $business_id ORDER BY name ";
                         $result = $conn->query($sql);
                         
                         if ($result->num_rows > 0) {
@@ -226,7 +228,7 @@ ob_start();
         $conn = getConnection();
         $sql = "SELECT p.*, e.name, e.employee_id as emp_id 
                 FROM payroll p 
-                JOIN employees e ON p.employee_id = e.id 
+                JOIN employees e ON p.employee_id = e.id WHERE p.business_id = $business_id
                 ORDER BY p.created_at DESC 
                 LIMIT 10";
         $result = $conn->query($sql);
