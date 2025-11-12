@@ -124,6 +124,19 @@ function formatCurrency($amount)
             font-size: 1.5rem;
             font-weight: bold;
         }
+
+        /* Reduced font sizes for the salary slip */
+        .salary-slip { font-size: 0.9rem; line-height: 1.35; }
+        .salary-slip h1 { font-size: 1.5rem !important; }
+        .salary-slip h2 { font-size: 1.25rem !important; }
+        .salary-slip h3 { font-size: 1.05rem !important; }
+        .salary-slip h4 { font-size: 0.95rem !important; }
+        .salary-slip th,
+        .salary-slip td,
+        .salary-slip p,
+        .salary-slip span,
+        .salary-slip label { font-size: 0.9rem !important; }
+        .salary-slip .text-sm { font-size: 0.8rem !important; }
     </style>
 </head>
 
@@ -230,7 +243,7 @@ function formatCurrency($amount)
                                     <td class="py-3 px-4">
                                         <div class="flex items-center">
                                             <i class="fas fa-minus-circle text-red-500 mr-2"></i>
-                                            <span>Deductions (Tax & Insurance)</span>
+                                            <span>Total Deductions</span>
                                         </div>
                                     </td>
                                     <td class="py-3 px-4 text-right font-medium text-red-600">- <?php echo formatCurrency($payroll['deductions']); ?></td>
@@ -247,6 +260,54 @@ function formatCurrency($amount)
                             </tbody>
                         </table>
                     </div>
+                </div>
+
+                <!-- Deduction Breakdown -->
+                <div class="mb-8">
+                    <h3 class="text-lg font-semibold text-primary-800 mb-4 flex items-center">
+                        <i class="fas fa-list mr-2"></i>
+                        Deduction Breakdown
+                    </h3>
+                    <?php
+                    require_once 'config/database.php';
+                    $conn2 = getConnection();
+                    $itemsSql = "SELECT pd.method, pd.amount_applied, pd.employer_amount, dt.name, dt.code 
+                                 FROM payroll_deductions pd 
+                                 JOIN deduction_types dt ON pd.deduction_type_id = dt.id 
+                                 WHERE pd.payroll_id = ?";
+                    $stmt2 = $conn2->prepare($itemsSql);
+                    $stmt2->bind_param("i", $payroll_id);
+                    $stmt2->execute();
+                    $dedRes = $stmt2->get_result();
+                    if ($dedRes->num_rows > 0): ?>
+                        <div class="overflow-x-auto border rounded-lg">
+                            <table class="min-w-full bg-white">
+                                <thead class="bg-gray-100">
+                                    <tr>
+                                        <th class="py-2 px-4 text-left text-gray-600">Type</th>
+                                        <th class="py-2 px-4 text-left text-gray-600">Method</th>
+                                        <th class="py-2 px-4 text-right text-gray-600">Employee</th>
+                                        <th class="py-2 px-4 text-right text-gray-600">Employer</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php while ($d = $dedRes->fetch_assoc()): ?>
+                                        <tr class="border-b">
+                                            <td class="py-2 px-4"><?php echo htmlspecialchars($d['name']); ?> <span class="text-xs text-gray-500">(<?php echo htmlspecialchars($d['code']); ?>)</span></td>
+                                            <td class="py-2 px-4 capitalize"><?php echo htmlspecialchars($d['method']); ?></td>
+                                            <td class="py-2 px-4 text-right text-red-600">- <?php echo formatCurrency($d['amount_applied']); ?></td>
+                                            <td class="py-2 px-4 text-right text-gray-700"><?php echo $d['employer_amount'] > 0 ? formatCurrency($d['employer_amount']) : '-'; ?></td>
+                                        </tr>
+                                    <?php endwhile; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                    <?php else: ?>
+                        <p class="text-gray-500">No deduction items recorded for this payroll.</p>
+                    <?php endif; 
+                    $stmt2->close();
+                    $conn2->close();
+                    ?>
                 </div>
 
                 <!-- Additional Information -->
