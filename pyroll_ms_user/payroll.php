@@ -6,7 +6,7 @@ require_once 'config/database.php';
 // Initialize variables
 $employee_id = $month = $year = "";
 $error = $success = "";
-$deduction_rate = 0.15; // 15% deduction rate for tax/insurance
+require_once 'includes/DeductionHelper.php';
 
 // Get current month and year for default values
 $current_month = date('F');
@@ -104,8 +104,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     $basic_salary = $employee['basic_salary'];
                     $allowances = $employee['allowances'];
                     $gross_salary = $basic_salary + $allowances;
-                    $deductions = $gross_salary * $deduction_rate;
-                    $net_salary = $gross_salary - $deductions;
+                    // Compute deductions via helper (statutory + custom)
+                    $items = DeductionHelper::computeApplicable($conn, (int)$business_id, (int)$employee_id, (float)$gross_salary);
+                    $deductions = 0.0;
+                    foreach ($items as $it) {
+                        $deductions += floatval($it['employee_amount']);
+                    }
+                    $deductions = round($deductions, 2);
+                    $net_salary = round($gross_salary - $deductions, 2);
                     
                     // Save payroll record (default status = active)
                     $sql = "INSERT INTO payroll (employee_id, month, year, gross_salary, deductions, net_salary,business_id, status) 
@@ -114,6 +120,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     $stmt->bind_param("isidddd", $employee_id, $month, $year, $gross_salary, $deductions, $net_salary,$business_id);
                     
                     if ($stmt->execute()) {
+                        $newPayrollId = $stmt->insert_id;
+                        // Record line items
+                        DeductionHelper::record($conn, (int)$business_id, (int)$newPayrollId, (int)$employee_id, $items);
                         $success = "Payroll processed successfully for " . $employee['name'] . " - $month $year";
                         // Reset form
                         $employee_id = "";
@@ -214,7 +223,7 @@ ob_start();
                 </button>
                 
                 <div class="text-sm text-gray-600">
-                    <span>Deduction Rate: <?php echo $deduction_rate * 100; ?>%</span>
+                    <span>Deductions computed per configured rules</span>
                 </div>
             </div>
         </form>
@@ -235,53 +244,38 @@ ob_start();
         
         if ($result->num_rows > 0) {
             echo '<div class="overflow-x-auto">';
-            echo '<table class="min-w-full bg-white">';
-            echo '<thead class="bg-gray-100">';
+            echo '<table class="min-w-full divide-y divide-slate-200 text-sm sortable-table">';
+            echo '<thead class="bg-slate-50">';
             echo '<tr>';
-            echo '<th class="py-2 px-4 text-left text-gray-600">Employee</th>';
-            echo '<th class="py-2 px-4 text-left text-gray-600">ID</th>';
-            echo '<th class="py-2 px-4 text-left text-gray-600">Period</th>';
-            echo '<th class="py-2 px-4 text-left text-gray-600">Gross Salary</th>';
-            echo '<th class="py-2 px-4 text-left text-gray-600">Deductions</th>';
-            echo '<th class="py-2 px-4 text-left text-gray-600">Net Salary</th>';
-            echo '<th class="py-2 px-4 text-left text-gray-600">Status</th>';
-            echo '<th class="py-2 px-4 text-left text-gray-600">Date</th>';
-            echo '<th class="py-2 px-4 text-left text-gray-600">Actions</th>';
+            echo '<th class="py-3 px-4 text-left text-slate-700 font-semibold cursor-pointer sortable-th" data-type="string">Employee <i class="fas fa-sort ml-1 text-slate-400"></i></th>';
+            echo '<th class="py-3 px-4 text-left text-slate-700 font-semibold cursor-pointer sortable-th" data-type="string">ID <i class="fas fa-sort ml-1 text-slate-400"></i></th>';
+            echo '<th class="py-3 px-4 text-left text-slate-700 font-semibold cursor-pointer sortable-th" data-type="date">Period <i class="fas fa-sort ml-1 text-slate-400"></i></th>';
+            echo '<th class="py-3 px-4 text-right text-slate-700 font-semibold cursor-pointer sortable-th" data-type="number">Gross Salary <i class="fas fa-sort ml-1 text-slate-400"></i></th>';
+            echo '<th class="py-3 px-4 text-right text-slate-700 font-semibold cursor-pointer sortable-th" data-type="number">Deductions <i class="fas fa-sort ml-1 text-slate-400"></i></th>';
+            echo '<th class="py-3 px-4 text-right text-slate-700 font-semibold cursor-pointer sortable-th" data-type="number">Net Salary <i class="fas fa-sort ml-1 text-slate-400"></i></th>';
+            echo '<th class="py-3 px-4 text-left text-slate-700 font-semibold cursor-pointer sortable-th" data-type="date">Date <i class="fas fa-sort ml-1 text-slate-400"></i></th>';
+            echo '<th class="py-3 px-4 text-left text-slate-700 font-semibold">Actions</th>';
             echo '</tr>';
             echo '</thead>';
             echo '<tbody>';
             
             while ($row = $result->fetch_assoc()) {
-                echo '<tr class="border-b hover:bg-gray-50">';
-                echo '<td class="py-2 px-4">' . htmlspecialchars($row['name']) . '</td>';
-                echo '<td class="py-2 px-4">' . htmlspecialchars($row['emp_id']) . '</td>';
-                echo '<td class="py-2 px-4">' . htmlspecialchars($row['month']) . ' ' . $row['year'] . '</td>';
-                echo '<td class="py-2 px-4">Ugx' . number_format($row['gross_salary'], 2) . '</td>';
-                echo '<td class="py-2 px-4">Ugx' . number_format($row['deductions'], 2) . '</td>';
-                echo '<td class="py-2 px-4">Ugx' . number_format($row['net_salary'], 2) . '</td>';
-
-                // ✅ Status badge
-                $status_badge = $row['status'] === 'active'
-                    ? '<span class="bg-green-100 text-green-700 px-2 py-1 rounded text-xs">Active</span>'
-                    : '<span class="bg-red-100 text-red-700 px-2 py-1 rounded text-xs">Inactive</span>';
-                echo '<td class="py-2 px-4">' . $status_badge . '</td>';
-
-                echo '<td class="py-2 px-4">' . date('M d, Y', strtotime($row['created_at'])) . '</td>';
+                echo '<tr class="odd:bg-white even:bg-slate-50 hover:bg-slate-100 transition-colors">';
+                echo '<td class="py-3 px-4" data-sort-value="' . htmlspecialchars($row['name']) . '">' . htmlspecialchars($row['name']) . '</td>';
+                echo '<td class="py-3 px-4" data-sort-value="' . htmlspecialchars($row['emp_id']) . '"><span class="inline-flex items-center px-2 py-0.5 rounded bg-slate-200 text-slate-700 font-mono text-xs">' . htmlspecialchars($row['emp_id']) . '</span></td>';
+                echo '<td class="py-3 px-4" data-sort-value="' . strtotime($row['month'] . ' 1, ' . $row['year']) . '">' . htmlspecialchars($row['month']) . ' ' . $row['year'] . '</td>';
+                echo '<td class="py-3 px-4 text-right" data-sort-value="' . (float)$row['gross_salary'] . '">UGX ' . number_format($row['gross_salary'], 2) . '</td>';
+                echo '<td class="py-3 px-4 text-right" data-sort-value="' . (float)$row['deductions'] . '">UGX ' . number_format($row['deductions'], 2) . '</td>';
+                echo '<td class="py-3 px-4 text-right" data-sort-value="' . (float)$row['net_salary'] . '">UGX ' . number_format($row['net_salary'], 2) . '</td>';
+                echo '<td class="py-3 px-4" data-sort-value="' . strtotime($row['created_at']) . '">' . date('M d, Y', strtotime($row['created_at'])) . '</td>';
 
                 // ✅ Actions
-                echo '<td class="py-2 px-4 flex space-x-2">';
-                if ($row['status'] === 'active') {
-                    echo '<a href="payroll.php?deactivate=' . $row['id'] . '" 
-                            class="bg-yellow-500 hover:bg-yellow-600 text-white py-1 px-2 rounded text-sm" 
-                            onclick="return confirm(\'Are you sure you want to deactivate this payroll record?\')">Deactivate</a>';
-                } else {
-                    echo '<a href="payroll.php?activate=' . $row['id'] . '" 
-                            class="bg-green-500 hover:bg-green-600 text-white py-1 px-2 rounded text-sm" 
-                            onclick="return confirm(\'Are you sure you want to activate this payroll record?\')">Activate</a>';
-                }
+                echo '<td class="py-3 px-4 whitespace-nowrap" style="white-space: nowrap;">';
+                echo '<div class="flex items-center space-x-2">';
                 echo '<a href="payroll.php?delete=' . $row['id'] . '" 
-                        class="bg-red-500 hover:bg-red-600 text-white py-1 px-2 rounded text-sm" 
-                        onclick="return confirm(\'Are you sure you want to delete this payroll record?\')">Delete</a>';
+                        class="inline-flex items-center bg-red-600 hover:bg-red-700 text-white text-xs font-semibold px-3 py-1 rounded shadow-sm" 
+                        onclick="return confirm(\'Are you sure you want to delete this payroll record?\')"><i class="fas fa-trash mr-1"></i> Delete</a>';
+                echo '</div>';
                 echo '</td>';
 
                 echo '</tr>';
