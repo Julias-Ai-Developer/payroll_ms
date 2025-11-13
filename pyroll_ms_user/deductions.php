@@ -215,14 +215,6 @@ ob_start();
             <label class="block text-sm font-medium text-slate-600">Employer Percent (%)</label>
             <input type="text" name="employer_percent" inputmode="decimal" class="mt-1 w-full border rounded px-3 py-2" placeholder="NSSF employer share" />
           </div>
-<<<<<<< HEAD
-          
-=======
-          <div class="md:col-span-2">
-            <label class="block text-sm font-medium text-slate-600">Brackets JSON</label>
-            <textarea name="brackets" rows="4" class="mt-1 w-full border rounded px-3 py-2" placeholder='[{"upto":235000,"rate":0},{"upto":335000,"rate":0.1},{"upto":1000000000,"rate":0.3}]'></textarea>
-          </div>
->>>>>>> 9d215daf0f52184e77427f69f19c561dbaaba2e1
           <div class="md:col-span-2">
             <label class="block text-sm font-medium text-slate-600">Description</label>
             <textarea name="description" rows="2" class="mt-1 w-full border rounded px-3 py-2" placeholder="Notes or policy reference"></textarea>
