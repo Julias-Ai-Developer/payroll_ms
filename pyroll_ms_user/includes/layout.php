@@ -411,6 +411,18 @@ $current_page = basename($_SERVER['PHP_SELF']);
                             <i class="fas fa-tachometer-alt text-lg w-6 text-center flex-shrink-0"></i>
                             <span class="menu-text font-medium ml-3">Dashboard</span>
                             <?php if ($current_page == 'dashboard.php'): ?>
+<<<<<<< HEAD
+                                <span class="ml-auto w-2 h-2 bg-accent-500 rounded-full animate-pulse"></span>
+                            <?php endif; ?>
+                        </a>
+                    </li>
+                     <li>
+                        <a href="deductions.php" class="flex items-center py-3 px-4 rounded-xl transition-all duration-200 hover:bg-white/10 hover:shadow-lg hover-lift <?php echo $current_page == 'deductions.php' ? 'menu-item-active text-white font-semibold' : 'text-slate-200'; ?>">
+                            <i class="fas fa-percent text-lg w-6 text-center flex-shrink-0"></i>
+                            <span class="menu-text font-medium ml-3">Deductions</span>
+                            <?php if ($current_page == 'deductions.php'): ?>
+=======
+>>>>>>> 9d215daf0f52184e77427f69f19c561dbaaba2e1
                                 <span class="ml-auto w-2 h-2 bg-accent-500 rounded-full animate-pulse"></span>
                             <?php endif; ?>
                         </a>
@@ -433,6 +445,9 @@ $current_page = basename($_SERVER['PHP_SELF']);
                             <?php endif; ?>
                         </a>
                     </li>
+<<<<<<< HEAD
+                     <li>
+=======
                     <li>
                         <a href="deductions.php" class="flex items-center py-3 px-4 rounded-xl transition-all duration-200 hover:bg-white/10 hover:shadow-lg hover-lift <?php echo $current_page == 'deductions.php' ? 'menu-item-active text-white font-semibold' : 'text-slate-200'; ?>">
                             <i class="fas fa-percent text-lg w-6 text-center flex-shrink-0"></i>
@@ -452,6 +467,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
                         </a>
                     </li>
                     <li>
+>>>>>>> 9d215daf0f52184e77427f69f19c561dbaaba2e1
                         <a href="reports.php" class="flex items-center py-3 px-4 rounded-xl transition-all duration-200 hover:bg-white/10 hover:shadow-lg hover-lift <?php echo $current_page == 'reports.php' ? 'menu-item-active text-white font-semibold' : 'text-slate-200'; ?>">
                             <i class="fas fa-chart-bar text-lg w-6 text-center flex-shrink-0"></i>
                             <span class="menu-text font-medium ml-3">Reports</span>
@@ -460,6 +476,19 @@ $current_page = basename($_SERVER['PHP_SELF']);
                             <?php endif; ?>
                         </a>
                     </li>
+<<<<<<< HEAD
+                    <li>
+                        <a href="slips.php" class="flex items-center py-3 px-4 rounded-xl transition-all duration-200 hover:bg-white/10 hover:shadow-lg hover-lift <?php echo $current_page == 'slips.php' ? 'menu-item-active text-white font-semibold' : 'text-slate-200'; ?>">
+                            <i class="fas fa-file-invoice-dollar text-lg w-6 text-center flex-shrink-0"></i>
+                            <span class="menu-text font-medium ml-3">Salary Slips</span>
+                            <?php if ($current_page == 'slips.php'): ?>
+                                <span class="ml-auto w-2 h-2 bg-accent-500 rounded-full animate-pulse"></span>
+                            <?php endif; ?>
+                        </a>
+                    </li>
+                  
+=======
+>>>>>>> 9d215daf0f52184e77427f69f19c561dbaaba2e1
                     
                     <li>
                         <a href="profile.php" class="flex items-center py-3 px-4 rounded-xl transition-all duration-200 hover:bg-white/10 hover:shadow-lg hover-lift <?php echo $current_page == 'profile.php' ? 'menu-item-active text-white font-semibold' : 'text-slate-200'; ?>">
