@@ -2,7 +2,7 @@
 // Database configuration
 define('DB_HOST', 'localhost');
 define('DB_USER', 'root');
-define('DB_PASS', 'ceo@2005');
+define('DB_PASS', 'root');
 define('DB_NAME', 'payroll_ms');
 
 // Create connection
